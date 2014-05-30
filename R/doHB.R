@@ -140,10 +140,18 @@ doHB <- function(likelihood_user,choicedata,control=list())
      {
           fixedA <- control[["fixedA"]]
      }
+     
+     if(is.null(control[["fixedD"]]))
+     {
+          fixedD <- NULL
+     } else
+     {
+          fixedD <- control[["fixedD"]]
+     }
 
      if(is.null(control[["nodiagnostics"]]))
      {
-          nodiagnostics <- F
+          nodiagnostics <- FALSE
      } else
      {
           nodiagnostics <- control[["nodiagnostics"]]
@@ -217,7 +225,7 @@ doHB <- function(likelihood_user,choicedata,control=list())
      # if you want to store the individual draws
      if(is.null(control[["gStoreDraws"]]))
      {
-          gStoreDraws <- F
+          gStoreDraws <- FALSE
      } else
      {
           gStoreDraws <- control[["gStoreDraws"]]
@@ -249,6 +257,31 @@ doHB <- function(likelihood_user,choicedata,control=list())
           gMAXCOEF <- control[["gMAXCOEF"]]
      } 
      
+     if(is.null(control[["pvMatrix"]]))
+     {
+          useCustomPVMatrix <- FALSE
+          pvMatrix <- NULL
+     } else
+     {
+          useCustomPVMatrix <- TRUE
+          pvMatrix <- control[["pvMatrix"]]
+     }  
+     
+     if(is.null(control[["targetAcceptanceNormal"]]))
+     {
+          targetAcceptanceNormal <- 0.3 
+     } else
+     {
+          targetAcceptanceNormal <- control[["targetAcceptanceNormal"]]
+     } 
+     
+     if(is.null(control[["targetAcceptanceFixed"]]))
+     {
+          targetAcceptanceFixed <- 0.3 
+     } else
+     {
+          targetAcceptanceFixed <- control[["targetAcceptanceFixed"]]
+     } 
      
      # End user-specified GLOBAL VARIABLEs     
      
@@ -271,11 +304,51 @@ doHB <- function(likelihood_user,choicedata,control=list())
      gNIV          <- length(gVarNamesNormal)         # Number of random normal coefficients
      gFIV          <- length(gVarNamesFixed)         # Number of fixed (non-random) coefficients
      
+     # Make sure the output files don't already exist
+     # if they do, append ~1 to the model name.
+     orig <- modelname
+     i <- 1     
+     while(any(file.exists(paste0(modelname, c(".log", "_A.csv", "_B.csv", "_Bsd.csv", "_C.csv", "_Csd.csv", "_D.csv", "_F.csv")))))
+     {
+          modelname <- paste0(orig,"~",i)
+          i <- i + 1
+     }
+     
+     if(is.null(pvMatrix))
+     {
+          pvMatrix <- priorVariance * diag(gNIV)
+     }
+
+     # need to make sure the pvMatrix is a matrix.
+     if(!is.matrix(pvMatrix))
+     {
+          stop("\npvMatrix is not a matrix. Make sure that your prior covariance matrix is ",gNIV," by ",gNIV,".")          
+     }
+     
+     # need to fail if pvMatrix is of the wrong size
+     if(nrow(pvMatrix)!= gNIV|ncol(pvMatrix)!= gNIV)
+     {
+          stop("\nThe prior covariance matrix is of the wrong size. This can occur only when the user specifies a custom prior covariance matrix. Make sure that your prior covariance matrix is ",gNIV," by ",gNIV,".")          
+     }
+     
+
+     
+     # writing out the custom prior covariance matrix
+     rownames(pvMatrix) <- colnames(pvMatrix) <- gVarNamesNormal
+     write.table(pvMatrix,paste0(modelname,"_pvMatrix.csv"),sep=",",row.names=TRUE,col.names=TRUE)
+          
      starttime     <- Sys.time()    # used to calculate seconds per iteration
      
-     distNames     <- c("N","LN+","LN-","TN","JSB")  # short names for the distributions
-                         # Normal, Postive Log-Normal, Negative Log-Normal, Positive Truncated Normal, Johnson SB
+     distNames     <- c("N","LN+","LN-","CN+","CN-","JSB")  # short names for the distributions
+                      # Normal, Postive Log-Normal, Negative Log-Normal, Positive Censored Normal, Negative Censored Normal, Johnson SB
      constraintLabels <- c("<",">")     
+     
+     # acceptance rate calculations
+     acceptanceRatePerc  <- 0
+     acceptanceRateF     <- 0    # this is the count over the last 100 iterations.
+     acceptanceRateFPerc <- 0
+     
+     rhoFadj         <- 1e-5
      
      if(checkModel(nodiagnostics))
      {     
@@ -297,6 +370,12 @@ doHB <- function(likelihood_user,choicedata,control=list())
           {
                ma   <- cbind(iteration=1:gNEREP,t(ma))
                md   <- cbind(iteration=1:gNEREP,t(md))
+               
+               # for labeling the D matrix
+               labelmatrix <-  matrix(1:(gNIV^2),gNIV,gNIV)
+               rownames(labelmatrix) <- colnames(labelmatrix) <- gVarNamesNormal
+               dlabels <- paste0(rownames(labelmatrix)[vech(row(labelmatrix))]," x ",colnames(labelmatrix)[vech(col(labelmatrix))])
+               colnames(md) <- c("iteration",dlabels)
                
                mcsd <- cbind(id=respIDs,sqrt((mc.squared-mc^2/gNEREP)/gNEREP))
                mc   <- cbind(id=respIDs,RLH=rowMeans(mp),mc/gNEREP)
@@ -322,18 +401,26 @@ doHB <- function(likelihood_user,choicedata,control=list())
 	     dev.off()
      
           if(gNIV > 0)
-          {     
-               write.table(ma,paste(modelname,"_A.csv",sep=""),sep=",",row.names=F)
-               write.table(md,paste(modelname,"_D.csv",sep=""),sep=",",row.names=F)
-            	write.table(mb,paste(modelname,"_B.csv",sep=""),sep=",",row.names=F)
-     	     write.table(mbsd,paste(modelname,"_Bsd.csv",sep=""),sep=",",row.names=F)
-               write.table(mc,paste(modelname,"_C.csv",sep=""),sep=",",row.names=F)
-               write.table(mcsd,paste(modelname,"_Csd.csv",sep=""),sep=",",row.names=F)
+          {    
+               fma <- paste0(modelname,"_A.csv")
+               fmd <- paste0(modelname,"_D.csv")
+               fmb <- paste0(modelname,"_B.csv")
+               fmbsd <- paste0(modelname,"_Bsd.csv")
+               fmc <- paste0(modelname,"_C.csv")
+               fmcsd <- paste0(modelname, "_Csd.csv")
+               
+               write.table(signif(ma,gSIGDIG),  fma    ,sep=",",row.names=FALSE)
+               write.table(signif(md,gSIGDIG),  fmd    ,sep=",",row.names=FALSE)
+               write.table(signif(mb,gSIGDIG),  fmb    ,sep=",",row.names=FALSE)
+               write.table(signif(mbsd,gSIGDIG),fmbsd  ,sep=",",row.names=FALSE)
+               write.table(signif(mc,gSIGDIG),  fmc    ,sep=",",row.names=FALSE)
+               write.table(signif(mcsd,gSIGDIG),fmcsd  ,sep=",",row.names=FALSE)
           }
                
           if(gFIV>0)
-          {     
-               write.table(mf,paste(modelname,"_F.csv",sep=""),sep=",",row.names=F)
+          {
+               mfName <- paste0(modelname,"_F.csv")
+               write.table(signif(mf,gSIGDIG),mfName,sep=",",row.names=FALSE)
           }
      
           if(gStoreDraws)
@@ -341,9 +428,9 @@ doHB <- function(likelihood_user,choicedata,control=list())
                cat("Creating individual draw files.","\n")     
                for(i in 1:gNP)
                {
-                    fn <- paste("Draws_",respIDs[i],".csv",sep="") 
+                    fn <- paste0("Draws_",respIDs[i],".csv") 
                     
-                    write.table(storedDraws[[i]],fn,sep=",",row.names=F,col.names=T)
+                    write.table(signif(storedDraws[[i]], gSIGDIG),fn,sep=",",row.names=FALSE,col.names=TRUE)
                     
                }
           }
