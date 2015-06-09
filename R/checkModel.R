@@ -1,57 +1,57 @@
-checkModel <- function(nodiagnostics=F, env=parent.frame())
+checkModel <- function(nodiagnostics = FALSE, verbose = TRUE, env = parent.frame())
 {
      
-     passChecks=TRUE
+     passChecks <- TRUE
 
      # model checks to make sure things are coded properly
      
      # the user needs to specify some variables. lets make sure they exist.
      
-     if(is.null(env$gDIST)&env$gNIV>0)
+     if (is.null(env$gDIST) & env$gNIV > 0)
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: Variable - gDIST - is undefined.\n")          
      }
-     if(is.null(env$gNCREP))
+     if (is.null(env$gNCREP))
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: Variable - gNCREP - is undefined.\n")
      }
-     if(is.null(env$gNEREP))
+     if (is.null(env$gNEREP))
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: Variable - gNEREP - is undefined.\n")
      }
-     if(is.null(env$gNSKIP))
+     if (is.null(env$gNSKIP))
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: Variable - gNSKIP - is undefined.\n")
      }
-     if(is.null(env$gINFOSKIP))
+     if (is.null(env$gINFOSKIP))
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: Variable - gINFOSKIP - is undefined.\n")
      }
-     if(is.null(env$likelihood))
+     if (is.null(env$likelihood))
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: The likelihood function is undefined.\n")
      }
      
-     if(env$gNIV+env$gFIV==0)
+     if (env$gNIV + env$gFIV == 0)
      {
-          passChecks=FALSE    
+          passChecks <- FALSE
           cat("\n********FATAL ERROR: Please specify at least one coefficient to be estimated in either in gVarNamesNormal or gVarNamesFixed.\n")
      }     
      # check to make sure that the number of distributions specified equals the 
      # the number of random coefficients in the model
-     if(length(env$gDIST)!=env$gNIV)
+     if (length(env$gDIST) != env$gNIV)
      {
           passChecks <- FALSE
           cat("\n********FATAL ERROR: The number of distributions specified in gDist doesn't equal the number of random coefficients in the model.\n")
      }
      # check to the see if the distributions specified exists in the set of allowable distributions
-     if(env$gNIV > 0)
+     if (env$gNIV > 0)
      {
           for(d in env$gDIST)
           {
@@ -63,119 +63,119 @@ checkModel <- function(nodiagnostics=F, env=parent.frame())
           }
      }
      # check to see if we have enough starting values for both the random and fixed coefficients
-     if(env$gNIV!=length(env$svN))
+     if (env$gNIV != length(env$svN))
      {
           passChecks <- FALSE    
           cat("\n********FATAL ERROR: There are too many/not enough starting values for the random coefficients. Check your sVN vector.\n")          
      }
-     if(env$gFIV!=length(env$FC))
+     if (env$gFIV != length(env$FC))
      {
           passChecks <- FALSE    
           cat("\n********FATAL ERROR: There are too many/not enough starting values for the fixed coefficients. Check your FC vector.\n")          
      }
      # the software assumes that there exists a respondent identifier is called ID
-     if(is.null(env$choicedata$ID))
+     if (is.null(env$choicedata$ID))
      {
           passChecks <- FALSE
           cat("\n********FATAL ERROR: Expecting to find a respondent identifier column called - ID - in your dataset. None found.\n")          
      }         
 
      # the software needs the data sorted by ID
-     if(sum(sort(env$choicedata$ID)==env$choicedata$ID)!=length(env$choicedata$ID))
+     if (sum(sort(env$choicedata$ID) == env$choicedata$ID) != length(env$choicedata$ID))
      {
           passChecks <- FALSE    
           cat("\n********FATAL ERROR: The choice data is not sorted by ID.\n")               
      }
      
-     if((!is.null(env$fixedA))&length(env$fixedA)!=length(env$gVarNamesNormal))
+     if ((!is.null(env$fixedA)) & length(env$fixedA) != length(env$gVarNamesNormal))
      {
           passChecks <- FALSE    
           cat("\n********FATAL ERROR: The fixedA vector is not of the same length as the gVarNamesNormal vector.\n") 
      }
      
-     if((!is.null(env$fixedD))&length(env$fixedD)!=length(env$gVarNamesNormal))
+     if ((!is.null(env$fixedD)) & length(env$fixedD) != length(env$gVarNamesNormal))
      {
           passChecks <- FALSE    
           cat("\n********FATAL ERROR: The fixedD vector is not of the same length as the gVarNamesNormal vector.\n") 
      }
      
-     if(passChecks)
+     if (passChecks) prepareModel(env)
+     
+     if (passChecks & verbose)
      {
-          prepareModel(env)
           
-          cat(rep("\n",128))
-          cat("Diagnostic checks passed. ")
-          cat("Please review before proceeding","\n\n")
-          cat("Number of Individuals: ",env$gNP,"\n",sep="\t")
-          cat("Number of Observations: ",env$gNOBS,"\n",sep="\t")
+          cat(rep("\n", 128))
+          cat("Diagnostic checks passed. Please review before proceeding\n")
+          diagnostics <- data.frame(` ` = c("Number of Individuals:",
+                                            "Number of Observations:",
+                                            "Custom Prior Matrix Used:",
+                                            "Prior variance:",
+                                            "Target Acceptance (Fixed):",
+                                            "Target Acceptance (Normal):",
+                                            "Degrees of Freedom:",
+                                            "Avg. Number of Observations per Individual:",
+                                            "Initial Log-Likelihood:"),
+                                    ` ` = as.character(rep(NA, 9)),
+                                    check.names = FALSE, stringsAsFactors = FALSE)
           
-          if(env$useCustomPVMatrix)
-          {
-               cat("Custom Prior Matrix Used: ", TRUE,"\n",sep="\t")
+          diagnostics[1,2] <- env$gNP
+          diagnostics[2,2] <- env$gNOBS
+          if (env$useCustomPVMatrix) {
+               diagnostics[3,2] <- TRUE
           } else {
-               cat("Prior variance: ", env$priorVariance,"\n",sep="\t")
+               diagnostics[4,2] <- signif(env$priorVariance, env$gSIGDIG)
           }
+          if (env$gFIV > 0) diagnostics[5,2]  <- signif(env$targetAcceptanceFixed, env$gSIGDIG)
+          if (env$gNIV > 0) diagnostics[6,2] <- signif(env$targetAcceptanceNormal, env$gSIGDIG)
+          diagnostics[7,2] <- signif(env$degreesOfFreedom, env$gSIGDIG)
+          diagnostics[8,2] <- signif(env$gNOBS / env$gNP, env$gSIGDIG)
+          diagnostics[9,2] <- signif(sum(log(env$likelihood(env$FC, env$B, env))), env$gSIGDIG)
+          cat("-----------------------------------------------------------\n")
+          print(diagnostics[complete.cases(diagnostics), , drop = FALSE], row.names = FALSE)
+          cat("\n-----------------------------------------------------------\n\n")
           
-          if(env$gNIV>0)
-          {               
-               cat("Target Acceptance (Normal): ", env$targetAcceptanceNormal,"\n",sep="\t")
-          }
-          if(env$gFIV>0)
-          {
-               cat("Target Acceptance (Fixed): ", env$targetAcceptanceFixed,"\n",sep="\t")
-          }
-          
-          cat("Degrees of Freedom: ", env$degreesOfFreedom,"\n",sep="\t")
-          cat("Avg. Number of Observations per Individual: ",env$gNOBS / env$gNP,"\n",sep="\t")
-          cat("Initial Log-Likelihood: ",sum(log(env$likelihood(env$FC,env$B,env))),"\n",sep="\t")
-          
-   	     if(env$gFIV > 0)
+   	     if (env$gFIV > 0)
 	     {
-	  	     cat("Fixed parameters estimated - start value:","\n")
-	 	     for(i in 1:env$gFIV)
-	 	     {
-	 	          cat(env$gVarNamesFixed[i]," -",env$FC[i],"\n")
-	 	     }
+               print(data.frame(`Fixed Parameters` = env$gVarNamesFixed, Start = env$FC, check.names = FALSE), row.names = FALSE)
+	  	     cat("\n-----------------------------------------------------------\n\n")
 	     }
           
-	     if(env$gNIV>0)
+	     if (env$gNIV > 0)
 	     {
-		     cat("Random Parameters estimated (Distribution) - start value:","\n")
-               for(i in 1:env$gNIV)
-               {
-                    cat(env$gVarNamesNormal[i],"(",env$distNames[env$gDIST[i]],") -", env$svN[i],"\n")
-               }
+	          print(data.frame(`Random Parameters` = env$gVarNamesNormal, Start = env$svN, `Dist.` = env$distNames[env$gDIST], check.names = FALSE), row.names = FALSE)
+               cat("\n-----------------------------------------------------------\n\n")
           }
           
-          if(!is.null(env$constraintsNorm))
+          if (!is.null(env$constraintsNorm))
           {
-               cat("Constraints applied to random parameters (param1 - inequality - param2):","\n")
-               for(i in 1:length(env$constraintsNorm))
-               {
-                    if(env$constraintsNorm[[i]][3]==0)
-                         cat(env$gVarNamesNormal[env$constraintsNorm[[i]][1]],env$constraintLabels[env$constraintsNorm[[i]][2]],0,"\n")
-                    if(env$constraintsNorm[[i]][3]!=0)
-                         cat(env$gVarNamesNormal[env$constraintsNorm[[i]][1]],env$constraintLabels[env$constraintsNorm[[i]][2]],env$gVarNamesNormal[env$constraintsNorm[[i]][3]],"\n")
-               }
+               cat("Constraints applied to random parameters:\n")
+               
+               diagconstraints <- data.frame(` ` = unlist(lapply(env$constraintsNorm, FUN = `[`, 1)),
+                                             ` ` = unlist(lapply(env$constraintsNorm, FUN = `[`, 2)),
+                                             ` ` = unlist(lapply(env$constraintsNorm, FUN = `[`, 3)),
+                                             check.names = FALSE)
+               
+               diagconstraints[, 1] <- env$gVarNamesNormal[diagconstraints[, 1]]
+               diagconstraints[, 2] <- env$constraintLabels[diagconstraints[, 2]]
+               diagconstraints[diagconstraints[, 3] != 0, 3] <- env$gVarNamesNormal[diagconstraints[diagconstraints[, 3] != 0, 3]]
+               print(diagconstraints, row.names = FALSE, right = FALSE)
+               cat("\n-----------------------------------------------------------")
           }
           
-          if(!is.null(env$Choice))
+          if (!is.null(env$Choice))
           {
-               cat("\n","Choice Matrix","\n")
-               choiceMatrix <- cbind(table(env$Choice),round(prop.table(table(env$Choice)),2))
+               cat("\n", "Choice Matrix", "\n")
+               choiceMatrix <- cbind(table(env$Choice), round(prop.table(table(env$Choice)), 2))
           
-               dimnames(choiceMatrix)[[2]] <- c("Count","%")
+               dimnames(choiceMatrix)[[2]] <- c("Count", "%")
                print(choiceMatrix)
           }
           
           cat("\n\n\n")
-          if(!nodiagnostics)
+          if (!nodiagnostics & verbose)
           {
-               rl <- readline("Enter 1 to Estimate Model, 2 to Stop Model")
-               if(rl!=1)
-               {
-                    passChecks=FALSE
-               }
+               rl <- readline("Estimate Model? (Y/N): ")
+               if(rl != "Y" & rl != "y") passChecks <- FALSE
           }
      }
      return(passChecks)
