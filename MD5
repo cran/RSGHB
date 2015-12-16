@@ -1,6 +1,6 @@
-cc4a194e4a2c47009f001b14673569e8 *DESCRIPTION
+8a69aec1d3a75240859f2dcec31207f8 *DESCRIPTION
 b2cb9f361ac191de677b867f6565890b *NAMESPACE
-e1aa13558fb36a41858448c4676d343d *NEWS
+8413a9f25f24530f485ef8d9ad604a0e *NEWS
 e917f6b7920fc270c68c2711a464104a *R/checkModel.R
 1d55ee71042542c3bc2618d5f1864ab5 *R/doHB.R
 7601a60d1f99e72d5750ffc7394de8ef *R/hb.R
@@ -15,13 +15,11 @@ d6d1847ac579b663f3ae89616bf0d345 *R/nextF.R
 de6daedc9f2c02e64e68c93e1b2a30b9 *R/prepareModel.R
 02a2f3044185d5c5f9c9d37bde4e2a0e *R/progreport.R
 9fe687f965fefbb84b9edcb60fb946ff *R/trans.R
-49aa7bc285f419c840ce7ba106594ed6 *R/vech.R
-5d359050fe8bb43bb4274f9ef5c7969b *R/writeModel.R
-e59c37b0b7429f23adc43e0e13818b33 *R/xpnd.R
-7ddd653a41df4e2cd0de9eefc6da79c4 *build/vignette.rds
+db11a7954b86281799ca03b64d3bf153 *R/writeModel.R
+1dcbc380e9cc14d0a997abec60e19307 *build/vignette.rds
 d443796949ac83d904bf81d5433a5118 *data/choicedata.txt.gz
 31bfd09ef1c2afd8f6e00aa97f28f141 *inst/doc/RSGHB_HowTo.R
-ea68bf8d94e00fb3c5a9c980f7790da6 *inst/doc/RSGHB_HowTo.pdf
+8117fda56ec08f9d23843a20d174899a *inst/doc/RSGHB_HowTo.pdf
 cc181fe3a3a482cacdb294466751d316 *inst/doc/RSGHB_HowTo.rnw
 764203f32efa7a0f19417f29ed95eb6a *man/choicedata.Rd
 a4bdab7388805d64fec6c9b8e9d682dc *man/doHB.Rd

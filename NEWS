@@ -1,3 +1,6 @@
+RSGHB 1.1.2
+* Fixed a bug in writeModel when only one random parameter is specified
+
 RSGHB 1.1.1
 * Fixed a bug when estimating a model with thinning (gNSKIP > 1)
 
