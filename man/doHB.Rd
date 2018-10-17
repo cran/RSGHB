@@ -57,15 +57,13 @@ For example \code{constraintsNorm = list(c(5,1,0), c(6,1,5), c(7,1,6))} would co
 
 \emph{gNSKIP} - Number of iterations in between retaining draws for averaging. (Defaults to \code{1})
 
-\emph{gSIGDIG} - The number of significant digits for reporting purposes. (Defaults to \code{10})
-
 \emph{gVarNamesFixed} - A character vector of names for the fixed parameters. (REQUIRED)
 
 \emph{gVarNamesNormal} - A character vector of names for the random parameters. (REQUIRED)
      
-\emph{gSeed} - The random seed. (Defaults to \code{0})
-     
 \emph{gStoreDraws} - Whether to store the draws for the individual level parameters. Doing so can dramatically increase the memory usage of the model if there are a large number of individuals or draws. (Defaults to \code{FALSE})
+
+\emph{hIW} - A boolean indicating if a hierarchical Inverted Wishart should be used when sampling in posterior distribution for the covariance matrix. New in version 1.2.0. (Defaults to \code{FALSE})
 
 \emph{modelname} - The model name which is used for creating output files. (Defaults to \code{"HBModel"})
 
@@ -99,12 +97,10 @@ a model object of class \code{RSGHB}. Contains:
   \item{distributions}{A character vector of assumed distributions for each random parameter.}
   \item{pv}{The prior variance-covariance matrix assumed for estimation.}
   \item{df}{Additional degrees of freedom in the model.}
-  \item{gSIGDIG}{The number of significant digits used in the reporting of the model results.}
   \item{gNP}{The number of individuals in the model.}
   \item{gOBS}{The number of observations in the model.}
   \item{gNCREP}{The number of burn-in iterations used prior to convergence.}
   \item{gNEREP}{The number of iterations used for averaging.}
-  \item{gSeed}{The random starting seed used.}
   \item{constraints}{A list of constraints. (see 'Details' above)}
   \item{iter.detail}{A data.frame of model statistics at every \code{gINFOSKIP}'th iteration.}
   \item{A}{A matrix containing the sample-level means of the underlying normals at each iteration. Is \code{NULL} if no random parameters were estimated.}
@@ -169,11 +165,11 @@ control <- list(
      gNEREP = 100,
      gINFOSKIP = 10,
      gNSKIP = 2,
-     nodiagnostics = TRUE,
-     gSeed = 1987
+     nodiagnostics = TRUE
 )
 
 # Estimate the model
+set.seed(1987)
 model <- doHB(likelihood, choicedata, control)
 
 }
