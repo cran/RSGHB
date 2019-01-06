@@ -103,7 +103,7 @@ doHB = function(likelihood_user, choicedata, control = list()) {
     degreesOfFreedom <- control[["degreesOfFreedom"]]
   }
   ### CMC: additional checks for using hIW
-  if (is.null(control[["hIW"]])) {
+  if (is.null(control[["hIW"]])|is.null(control[["gVarNamesNormal"]])) {
     hIW <- FALSE
   } else {
     hIW <- control[["hIW"]]

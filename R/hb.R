@@ -132,6 +132,7 @@ hb = function(a, b, d, f, env = parent.frame()) {
       }
     }
     if (env$gFIV > 0) {
+      
       out <- nextF(p, f, b, env)
       if (sum(out[[1]] == f) != env$gFIV) {
         env$acceptanceRateF <- env$acceptanceRateF + 1
@@ -145,11 +146,12 @@ hb = function(a, b, d, f, env = parent.frame()) {
           }
           env$acceptanceRateF <- 0
         }
-        f <- out[[1]]
-        p <- out[[2]]
-        if (r%%env$gNSKIP == 0) {
-          env$mf[, (r/env$gNSKIP)] <- f
-        }
+      }
+      f <- out[[1]]
+      p <- out[[2]]
+
+      if (r%%env$gNSKIP == 0) {
+        env$mf[, (r/env$gNSKIP)] <- f
       }
     }
     ### CMC: independently of whether we've used random or fixed, we now save LL and RLH, next four lines added
